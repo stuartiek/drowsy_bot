@@ -1,0 +1,29 @@
+{
+  "name": "drowsy_bot",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/ABZ-Digital-Group/drowsy_bot#readme",
+  "bugs": {
+    "url": "https://github.com/ABZ-Digital-Group/drowsy_bot/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ABZ-Digital-Group/drowsy_bot.git"
+  },
+  "license": "ISC",
+  "author": "DrowsyVocals",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@discordjs/voice": "^0.18.0",
+    "@napi-rs/canvas": "^1.0.1",
+    "discord.js": "^14.26.0",
+    "dotenv": "^17.4.0",
+    "pngjs": "^7.0.0",
+    "prism-media": "^1.3.5"
+  }
+}

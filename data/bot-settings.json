@@ -1,0 +1,22 @@
+{
+  "shyStage": {
+    "baseName": "sleepy singing",
+    "alwaysVisibleCount": 2,
+    "userLimit": 3,
+    "limitChoices": [
+      5,
+      10,
+      15,
+      0
+    ],
+    "unusedDeleteMinutes": 5,
+    "emptyDeleteMinutes": 15,
+    "cleanupIntervalSeconds": 60
+  },
+  "postEventStats": {
+    "channelId": "1229141305444012126"
+  },
+  "queue": {
+    "maxQueueLength": 25
+  }
+}

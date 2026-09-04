@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drowsy Bot Command Reference</title>
+    <style>
+        @font-face {
+            font-family: 'Satoshi';
+            src: url('../assests/fonts/Satoshi-Regular.otf') format('opentype');
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Satoshi';
+            src: url('../assests/fonts/Satoshi-Medium.otf') format('opentype');
+            font-weight: 500;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Satoshi';
+            src: url('../assests/fonts/Satoshi-Bold.otf') format('opentype');
+            font-weight: 700;
+            font-style: normal;
+        }
+
+        :root {
+            --ink: #122033;
+            --muted: #5c6b7b;
+            --border: #d7e0ea;
+            --panel: #ffffff;
+            --panel-alt: #f4f7fb;
+            --accent: #0f766e;
+            --accent-soft: #d9f3f0;
+            --staff: #7c2d12;
+            --staff-soft: #ffedd5;
+            --text-command: #0b3b66;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Satoshi', sans-serif;
+            color: var(--ink);
+            background:
+                linear-gradient(180deg, rgba(217, 243, 240, 0.9), rgba(244, 247, 251, 1)),
+                #f4f7fb;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            padding: 14mm;
+        }
+
+        .hero {
+            padding: 18px 20px;
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            background: linear-gradient(135deg, rgba(15, 118, 110, 0.10), rgba(255, 255, 255, 0.96));
+        }
+
+        .eyebrow {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 14px 0 8px;
+            font-size: 31px;
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+        }
+
+        .lead {
+            margin: 0;
+            max-width: 720px;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        .top-grid {
+            display: grid;
+            grid-template-columns: 1.35fr 0.9fr;
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .panel {
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.94);
+            padding: 14px;
+        }
+
+        .panel h2,
+        .section h2 {
+            margin: 0 0 10px;
+            font-size: 17px;
+            letter-spacing: -0.02em;
+        }
+
+        .quick-list,
+        .plain-list {
+            margin: 0;
+            padding-left: 18px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--muted);
+        }
+
+        .quick-list li + li,
+        .plain-list li + li {
+            margin-top: 4px;
+        }
+
+        .tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .tag {
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: var(--panel-alt);
+            border: 1px solid var(--border);
+            color: var(--ink);
+            font-size: 12px;
+        }
+
+        .section {
+            margin-top: 14px;
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: var(--panel);
+        }
+
+        .section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .section-note {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .command-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .command-card {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: var(--panel-alt);
+            padding: 12px;
+        }
+
+        .command-line {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 6px;
+        }
+
+        .command-name {
+            color: var(--text-command);
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .pill.staff {
+            background: var(--staff-soft);
+            color: var(--staff);
+        }
+
+        .pill.public {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .command-card p {
+            margin: 0;
+            color: var(--ink);
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        .detail {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .footer-note {
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.55;
+        }
+
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .page {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <section class="hero">
+            <div class="eyebrow">Drowsy Bot Command Reference</div>
+            <h1>Commands only: what each bot command does.</h1>
+            <p class="lead">This PDF covers the bot commands users and staff can run in Discord. Slash commands use the <strong>/</strong> menu. Legacy text commands begin with <strong>!</strong>. Staff-only commands require a staff role in the server.</p>
+
+            <div class="top-grid">
+                <article class="panel">
+                    <h2>How To Read This</h2>
+                    <ul class="quick-list">
+                        <li><strong>Public</strong> commands can be used by regular members.</li>
+                        <li><strong>Staff Only</strong> commands are limited to moderators or event staff.</li>
+                        <li>Queue commands control live stage or open-mic sessions.</li>
+                        <li>Ad and invite tools support overlays and moderation.</li>
+                    </ul>
+                </article>
+
+                <article class="panel">
+                    <h2>Included Sections</h2>
+                    <div class="tag-row">
+                        <span class="tag">Stage queue</span>
+                        <span class="tag">Announcements</span>
+                        <span class="tag">Advertisements</span>
+                        <span class="tag">Invite moderation</span>
+                        <span class="tag">Legacy text commands</span>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-head">
+                <h2>Slash Commands</h2>
+                <span class="section-note">Discord app commands</span>
+            </div>
+            <div class="command-grid">
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/events</span><span class="pill public">Public</span></div>
+                    <p>Posts links for live and upcoming Discord scheduled events in the server.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/queue</span><span class="pill public">Public</span></div>
+                    <p>Shows the current lineup and active stage status for the server.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/announce</span><span class="pill staff">Staff Only</span></div>
+                    <p>Sends an announcement through the bot to the current channel or another selected text channel.</p>
+                    <p class="detail">Options: message, optional title, optional color, optional target channel.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/announce-color</span><span class="pill staff">Staff Only</span></div>
+                    <p>Sets, checks, or clears the default embed color used for announcements in that server.</p>
+                    <p class="detail">Options: color and optional reset flag.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/start-queue</span><span class="command-name">/startqueue</span><span class="pill staff">Staff Only</span></div>
+                    <p>Starts queue tracking for the voice or stage channel the staff member is currently in and posts the control panel.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/open-queue</span><span class="pill staff">Staff Only</span></div>
+                    <p>Reopens the active queue so new people can join the lineup again.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/close-queue</span><span class="pill staff">Staff Only</span></div>
+                    <p>Closes the active queue to new joiners without ending the current event.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/next</span><span class="pill staff">Staff Only</span></div>
+                    <p>Moves the session forward to the next performer in the queue.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/radio</span><span class="pill staff">Staff Only</span></div>
+                    <p>Starts or stops the intermission radio used between performers.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/stop-queue</span><span class="pill staff">Staff Only</span></div>
+                    <p>Ends the active event, closes the session, and posts event stats when available.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/ad-upload</span><span class="pill staff">Staff Only</span></div>
+                    <p>Uploads a new image ad for the OBS overlay and makes it the active ad.</p>
+                    <p class="detail">Options: required image attachment, optional title.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/ad-list</span><span class="pill staff">Staff Only</span></div>
+                    <p>Lists the uploaded ads so staff can see their ad numbers and current order.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/ad-show</span><span class="pill staff">Staff Only</span></div>
+                    <p>Switches the active overlay ad to a specific uploaded ad by its list number.</p>
+                    <p class="detail">Option: index from the ad list.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/ad-rotate</span><span class="pill staff">Staff Only</span></div>
+                    <p>Turns on automatic ad rotation for the OBS overlay.</p>
+                    <p class="detail">Option: seconds between changes.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/ad-rotate-stop</span><span class="pill staff">Staff Only</span></div>
+                    <p>Turns off automatic ad rotation and leaves the current ad in place.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/ad-remove</span><span class="pill staff">Staff Only</span></div>
+                    <p>Deletes an uploaded ad image by its list number.</p>
+                    <p class="detail">Option: index from the ad list.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/allow-invites</span><span class="pill staff">Staff Only</span></div>
+                    <p>Lets a specific user or bot post Discord invite links without being moderated.</p>
+                    <p class="detail">Option: target user or bot.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/revoke-invites</span><span class="pill staff">Staff Only</span></div>
+                    <p>Removes invite-link permission from a user or bot on the allowlist.</p>
+                    <p class="detail">Option: target user or bot.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">/purge-invites</span><span class="pill staff">Staff Only</span></div>
+                    <p>Scans text channels and deletes unauthorized Discord invite links.</p>
+                    <p class="detail">Option: messages per channel to scan.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-head">
+                <h2>Legacy Text Commands</h2>
+                <span class="section-note">Message commands that begin with !</span>
+            </div>
+            <div class="command-grid">
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">!queue</span><span class="command-name">!q</span><span class="pill public">Public</span></div>
+                    <p>Replies with the current queue embed for the active stage.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">!queuejoin</span><span class="command-name">!qj</span><span class="pill public">Public</span></div>
+                    <p>Joins the active lineup if the queue is open and the member is in the required voice channel.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">!queueleave</span><span class="command-name">!ql</span><span class="pill public">Public</span></div>
+                    <p>Leaves the current queue. If the current performer leaves, the queue advances forward.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">!queuenext</span><span class="command-name">!qn</span><span class="pill staff">Staff Only</span></div>
+                    <p>Advances to the next performer using the message-command version of the queue controls.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">!addqueue</span><span class="command-name">!aq</span><span class="pill staff">Staff Only</span></div>
+                    <p>Adds a user to the lineup by mention, user ID, exact username, or exact display name.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">!startqueue</span><span class="command-name">!sq</span><span class="pill staff">Staff Only</span></div>
+                    <p>Starts the active queue for the voice or stage channel the staff member is currently connected to and posts the control panel.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">!endqueue</span><span class="command-name">!eq</span><span class="pill staff">Staff Only</span></div>
+                    <p>Ends the active queue session, closes the connection, and posts event stats when available.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">!stagestart</span><span class="command-name">!ss</span><span class="pill staff">Staff Only</span></div>
+                    <p>Starts tracking a Discord stage channel the staff member is already connected to.</p>
+                </article>
+
+                <article class="command-card">
+                    <div class="command-line"><span class="command-name">!stageend</span><span class="command-name">!se</span><span class="pill staff">Staff Only</span></div>
+                    <p>Stops stage tracking that was started with the legacy text command flow.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-head">
+                <h2>Notes</h2>
+                <span class="section-note">Important behavior</span>
+            </div>
+            <ul class="plain-list">
+                <li>Queue commands only work when there is an active tracked stage or voice session.</li>
+                <li>Some commands return private staff replies instead of public messages.</li>
+                <li>Advertisement commands affect the OBS/browser overlay assets used by the bot.</li>
+                <li>Invite moderation commands manage an allowlist and cleanup unauthorized invite links.</li>
+            </ul>
+        </section>
+
+        <p class="footer-note">Export note: open this file in a browser and print to PDF with background graphics enabled. The layout is sized for A4 output and focuses only on bot commands.</p>
+    </main>
+</body>
+</html>
