@@ -35,7 +35,7 @@ module.exports = {
     INVITE_REGEX: /(https?:\/\/)?(www\.)?(discord\.gg|discord(?:app)?\.com\/(invite|events))\/[A-Za-z0-9-]+(?:\/[A-Za-z0-9-]+)?/i,
     DEFAULT_PURGE_SCAN_LIMIT: 250,
     MAX_PURGE_SCAN_LIMIT: 1000,
-    BOT_API_TOKEN: process.env.BOT_API_TOKEN?.trim() || null,
+    BOT_API_TOKEN: (process.env.BOT_API_SECRET || process.env.BOT_API_TOKEN)?.trim() || null,
     ADMIN_PANEL_PASSWORD: process.env.ADMIN_PANEL_PASSWORD?.trim() || null,
     ADMIN_PANEL_SESSION_HOURS: Number.isInteger(parsedAdminSessionHours) && parsedAdminSessionHours > 0
         ? parsedAdminSessionHours

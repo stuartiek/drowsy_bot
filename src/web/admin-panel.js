@@ -3,6 +3,7 @@ const crypto = require('crypto');
 
 function createAdminPanel({ client, config, state, communityFeature }) {
     const sessions = new Map();
+    let syncInProgress = false;
 
     function escapeHtml(value) {
         return String(value ?? '')
@@ -134,11 +135,26 @@ function createAdminPanel({ client, config, state, communityFeature }) {
     }
 
     function isAuthorizedApiRequest(request) {
-        if (isLoopbackRequest(request)) return true;
         if (!config.BOT_API_TOKEN) return false;
 
-        const authorization = String(request.headers.authorization ?? '');
-        return authorization === `Bearer ${config.BOT_API_TOKEN}`;
+        const supplied = String(request.headers['x-bot-api-key'] ?? '')
+            || String(request.headers.authorization ?? '').replace(/^Bearer\s+/i, '');
+        if (!supplied) return false;
+
+        const expected = Buffer.from(config.BOT_API_TOKEN, 'utf8');
+        const actual = Buffer.from(supplied, 'utf8');
+        return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
+    }
+
+    function getBotStatus() {
+        return {
+            online: client.isReady(),
+            botUser: client.user?.tag ?? null,
+            guildCount: client.guilds.cache.size,
+            uptimeSeconds: Math.floor(process.uptime()),
+            lastReadyAt: client.readyAt?.toISOString() ?? null,
+            latencyMs: Number.isFinite(client.ws?.ping) && client.ws.ping >= 0 ? client.ws.ping : null,
+        };
     }
 
     function parseMultipartForm(request, bodyBuffer) {
@@ -552,11 +568,135 @@ announcementGuildSelect.addEventListener('change', syncAnnouncementChannels);
 </html>`;
     }
 
+    async function syncMember(form) {
+        const { guildId, discordId, displayName, rank, house } = form;
+        const guild = guildId ? client.guilds.cache.get(guildId) : (client.guilds.cache.get(config.GUILD_ID) ?? client.guilds.cache.first());
+        if (!guild) return { error: 'Guild not found.' };
+
+        const member = await guild.members.fetch(discordId).catch(() => null);
+        if (!member) return { error: 'Discord member not found in guild.' };
+
+        const results = { rankRoleAdded: null, houseRoleAdded: null, nicknameChanged: null, errors: [] };
+        if (displayName && member.displayName !== displayName) {
+            try {
+                await member.setNickname(displayName);
+                results.nicknameChanged = displayName;
+            } catch (error) {
+                results.errors.push(`Nickname update failed: ${error.message}`);
+            }
+        }
+
+        if (rank) {
+            const targetRankRole = guild.roles.cache.find(role => role.name.toLowerCase() === rank.toLowerCase());
+            if (targetRankRole) {
+                try {
+                    const knownRanks = ['Mr. Sandman', 'Realm God', 'Drowsy Defender', 'Dreamy Defender', 'Dreamland Guard', 'Nighty Knights', 'Nighty Knight', 'Tired Esquire'];
+                    const rolesToRemove = member.roles.cache.filter(role => knownRanks.some(name => name.toLowerCase() === role.name.toLowerCase()) && role.id !== targetRankRole.id);
+                    if (rolesToRemove.size > 0) await member.roles.remove(rolesToRemove);
+                    if (!member.roles.cache.has(targetRankRole.id)) {
+                        await member.roles.add(targetRankRole);
+                        results.rankRoleAdded = targetRankRole.name;
+                    }
+                } catch (error) {
+                    results.errors.push(`Rank role update failed: ${error.message}`);
+                }
+            }
+        }
+
+        if (house) {
+            const targetHouseRole = guild.roles.cache.find(role => role.name.toLowerCase() === house.toLowerCase());
+            if (targetHouseRole) {
+                try {
+                    const knownHouses = ['Stubo United', 'Penguin Force', 'Drowsy Operators'];
+                    const rolesToRemove = member.roles.cache.filter(role => knownHouses.some(name => name.toLowerCase() === role.name.toLowerCase()) && role.id !== targetHouseRole.id);
+                    if (rolesToRemove.size > 0) await member.roles.remove(rolesToRemove);
+                    if (!member.roles.cache.has(targetHouseRole.id)) {
+                        await member.roles.add(targetHouseRole);
+                        results.houseRoleAdded = targetHouseRole.name;
+                    }
+                } catch (error) {
+                    results.errors.push(`House role update failed: ${error.message}`);
+                }
+            }
+        }
+
+        return { results };
+    }
+
     async function renderPanel(response, flashMessage = '', statusCode = 200) {
         sendHtml(response, statusCode, buildPanelHtml(await buildPanelState(), flashMessage));
     }
 
     async function handleRequest(request, response, url) {
+        if (url.pathname === '/status' && request.method === 'GET') {
+            if (!isAuthorizedApiRequest(request)) {
+                sendJson(response, 401, { error: 'Unauthorized.' });
+                return true;
+            }
+
+            sendJson(response, 200, getBotStatus());
+            return true;
+        }
+
+        if (url.pathname === '/actions/announcement' && request.method === 'POST') {
+            if (!isAuthorizedApiRequest(request)) {
+                sendJson(response, 401, { error: 'Unauthorized.' });
+                return true;
+            }
+
+            const form = parseFormBody(await readRequestBody(request));
+            const message = String(form.message ?? '').trim();
+            if (!form.guildId || !form.channelId || !message || message.length > 4000) {
+                sendJson(response, 400, { error: 'Guild, authorized channel, and a message up to 4000 characters are required.' });
+                return true;
+            }
+
+            const result = await communityFeature.sendAnnouncementFromAdmin({
+                guildId: form.guildId,
+                channelId: form.channelId,
+                message,
+                title: String(form.title ?? '').trim().slice(0, 256),
+                color: String(form.color ?? '').trim(),
+            });
+            sendJson(response, result.status === 'sent' ? 200 : 400, result.status === 'sent'
+                ? { ok: true, result }
+                : { error: result.error ?? 'Discord action failed.' });
+            return true;
+        }
+
+        if (url.pathname === '/actions/sync' && request.method === 'POST') {
+            if (!isAuthorizedApiRequest(request)) {
+                sendJson(response, 401, { error: 'Unauthorized.' });
+                return true;
+            }
+            if (!client.isReady()) {
+                sendJson(response, 503, { error: 'Bot offline.' });
+                return true;
+            }
+            if (syncInProgress) {
+                sendJson(response, 409, { error: 'Action already running.' });
+                return true;
+            }
+
+            syncInProgress = true;
+            try {
+                const form = parseFormBody(await readRequestBody(request));
+                if (!/^\d{17,20}$/.test(String(form.discordId ?? ''))) {
+                    sendJson(response, 400, { error: 'A valid Discord member ID is required.' });
+                    return true;
+                }
+                const result = await syncMember(form);
+                if (result.error) {
+                    sendJson(response, 404, { error: result.error });
+                    return true;
+                }
+                sendJson(response, 200, { ok: result.results.errors.length === 0, results: result.results });
+            } finally {
+                syncInProgress = false;
+            }
+            return true;
+        }
+
         if (!url.pathname.startsWith('/admin/api/')) {
             return false;
         }
@@ -942,74 +1082,16 @@ announcementGuildSelect.addEventListener('change', syncAnnouncementChannels);
         // ROLE AND NICKNAME SYNC API
         if (url.pathname === '/admin/api/sync-member' && request.method === 'POST') {
             const form = parseFormBody(await readRequestBody(request));
-            const { guildId, discordId, displayName, rank, house } = form;
-
-            const guild = guildId ? client.guilds.cache.get(guildId) : (client.guilds.cache.get(config.GUILD_ID) ?? client.guilds.cache.first());
-            if (!guild) {
-                sendJson(response, 404, { error: 'Guild not found.' });
+            if (!/^\d{17,20}$/.test(String(form.discordId ?? ''))) {
+                sendJson(response, 400, { error: 'A valid Discord member ID is required.' });
                 return true;
             }
-
-            const member = await guild.members.fetch(discordId).catch(() => null);
-            if (!member) {
-                sendJson(response, 404, { error: 'Discord member not found in guild.' });
+            const result = await syncMember(form);
+            if (result.error) {
+                sendJson(response, 404, { error: result.error });
                 return true;
             }
-
-            const results = { rankRoleAdded: null, houseRoleAdded: null, nicknameChanged: null, errors: [] };
-
-            // Update nickname if requested and permitted
-            if (displayName && member.displayName !== displayName) {
-                try {
-                    await member.setNickname(displayName);
-                    results.nicknameChanged = displayName;
-                } catch (e) {
-                    results.errors.push(`Nickname update failed: ${e.message}`);
-                }
-            }
-
-            // Sync Rank Role if matched
-            if (rank) {
-                const targetRankRole = guild.roles.cache.find(r => r.name.toLowerCase() === rank.toLowerCase());
-                if (targetRankRole) {
-                    try {
-                        // Find other rank roles and remove them
-                        const knownRanks = ['Mr. Sandman', 'Realm God', 'Drowsy Defender', 'Dreamy Defender', 'Dreamland Guard', 'Nighty Knights', 'Nighty Knight', 'Tired Esquire'];
-                        const rolesToRemove = member.roles.cache.filter(r => knownRanks.some(kr => kr.toLowerCase() === r.name.toLowerCase()) && r.id !== targetRankRole.id);
-                        if (rolesToRemove.size > 0) {
-                            await member.roles.remove(rolesToRemove);
-                        }
-                        if (!member.roles.cache.has(targetRankRole.id)) {
-                            await member.roles.add(targetRankRole);
-                            results.rankRoleAdded = targetRankRole.name;
-                        }
-                    } catch (e) {
-                        results.errors.push(`Rank role update failed: ${e.message}`);
-                    }
-                }
-            }
-
-            // Sync House Role if matched
-            if (house) {
-                const targetHouseRole = guild.roles.cache.find(r => r.name.toLowerCase() === house.toLowerCase());
-                if (targetHouseRole) {
-                    try {
-                        const knownHouses = ['Stubo United', 'Penguin Force', 'Drowsy Operators'];
-                        const rolesToRemove = member.roles.cache.filter(r => knownHouses.some(kh => kh.toLowerCase() === r.name.toLowerCase()) && r.id !== targetHouseRole.id);
-                        if (rolesToRemove.size > 0) {
-                            await member.roles.remove(rolesToRemove);
-                        }
-                        if (!member.roles.cache.has(targetHouseRole.id)) {
-                            await member.roles.add(targetHouseRole);
-                            results.houseRoleAdded = targetHouseRole.name;
-                        }
-                    } catch (e) {
-                        results.errors.push(`House role update failed: ${e.message}`);
-                    }
-                }
-            }
-
-            sendJson(response, 200, { ok: results.errors.length === 0, results });
+            sendJson(response, 200, { ok: result.results.errors.length === 0, results: result.results });
             return true;
         }
 
