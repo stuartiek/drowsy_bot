@@ -1685,7 +1685,11 @@ function startHttpServer() {
     });
 
     server.on('error', error => {
-        console.error('Failed to start OBS overlay server:', error);
+        console.error('Failed to start admin HTTP server:', error);
+        if (error.code === 'EADDRINUSE') {
+            console.error(`Port ${config.ADMIN_HTTP_PORT} is already in use. Stop the existing bot process or choose a different ADMIN_HTTP_PORT.`);
+            process.exit(1);
+        }
     });
 }
 
